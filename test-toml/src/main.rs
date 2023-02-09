@@ -3,9 +3,14 @@ use serde_derive::Deserialize;
 use std::{collections::HashMap, process};
 
 fn main() {
-    if let Err(e) = test_structure_based_toml() {
-        eprintln!("fail to parse toml. {e:?}");
-        process::exit(100);
+    match test_structure_based_toml() {
+        Err(e) => {
+            eprintln!("fail to parse toml. {e:?}");
+            process::exit(100);
+        }
+        Ok(toml) => {
+            println!("{toml:#?}");
+        }
     }
 }
 
@@ -22,7 +27,7 @@ struct ServiceConf {
     exec: String,
 }
 
-fn test_structure_based_toml() -> Result<()> {
+fn test_structure_based_toml() -> Result<Config> {
     let services_toml = r#"
     envs=[
         "TOPIC = httpthreat",
@@ -76,5 +81,5 @@ fn test_structure_based_toml() -> Result<()> {
         }
     }
     println!("evaluated config\n{decoded:#?}");
-    Ok(())
+    Ok(decoded)
 }
