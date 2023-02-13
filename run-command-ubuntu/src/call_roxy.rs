@@ -15,3 +15,7 @@ pub fn disable() -> Result<bool> {
     roxy::service_control(roxy::common::SubCommand::Disable, UFW_UNIT.to_string())
         .map(|s| s == "active")
 }
+
+pub fn is_active() -> Result<String> {
+    roxy::service_control(roxy::common::SubCommand::Status, UFW_UNIT.to_string())
+}

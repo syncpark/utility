@@ -8,6 +8,17 @@ fn main() {
     let roxy = args.get(2) == Some(&"roxy".to_string());
     if let Some(cmd) = args.get(1) {
         match cmd.as_str() {
+            "is-active" => {
+                let ret = if roxy {
+                    call_roxy::is_active()
+                } else {
+                    ufw::is_active()
+                };
+                match ret {
+                    Ok(s) => println!("{s}"),
+                    Err(e) => eprintln!("{e}"),
+                }
+            }
             "status" => {
                 let ret = if roxy {
                     call_roxy::status()
@@ -41,6 +52,11 @@ fn main() {
                 match ret {
                     Ok(r) => println!("{r}"),
                     Err(e) => eprintln!("{e}"),
+                }
+            }
+            "allow" | "delete" | "deny" => {
+                if let Some(params) = args.get(1..) {
+                    ufw::update(params);
                 }
             }
             _ => eprintln!("unknown command"),
