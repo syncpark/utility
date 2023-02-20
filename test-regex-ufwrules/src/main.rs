@@ -39,7 +39,7 @@ fn main() {
     25/tcp (v6)                DENY OUT    Anywhere (v6)
     Anywhere                   DENY IN     203.0.113.100
     Anywhere on eth0           ALLOW IN    203.0.113.102"#;
-    parse_by_split(s);
+    let _r = parse_by_split(s);
 }
 
 #[allow(dead_code)]
