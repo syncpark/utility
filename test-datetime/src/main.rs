@@ -4,13 +4,15 @@ use std::convert::TryFrom;
 use std::str;
 
 fn main() {
-    let input = 1_562_050_801_302_957_000_u64;
-    let start = from_u64(input);
-    println!("{input} => {start}");
-    println!("{}", parse_rfc3339_weak(&start).format("%FT%T%.9fZ"));
+    from_utc_to_local2();
+    // let input = 1_562_050_801_302_957_000_u64;
+    // let start = from_u64(input);
+    // println!("{input} => {start}");
+    // println!("{}", parse_rfc3339_weak(&start).format("%FT%T%.9fZ"));
 }
 
 const A_BILLION: i64 = 1_000_000_000;
+#[allow(unused)]
 fn from_u64(input: u64) -> String {
     let input = i64::try_from(input).unwrap_or_default();
     let nsecs = u32::try_from(input % A_BILLION).unwrap_or_default();
@@ -18,6 +20,7 @@ fn from_u64(input: u64) -> String {
         .map_or("-".to_string(), |s| s.format("%FT%T%.9fZ").to_string())
 }
 
+#[allow(unused)]
 fn parse_rfc3339_weak(s: &str) -> DateTime<Utc> {
     chrono::DateTime::from(humantime::parse_rfc3339_weak(s).unwrap())
 }
@@ -48,6 +51,14 @@ fn from_utc_to_local(v: &str) {
             DateTime::<Local>::from(ts).format("%Y-%m-%d %H:%M:%S")
         );
     }
+}
+
+#[allow(unused)]
+fn from_utc_to_local2() {
+    let utc = Utc::now();
+    let local = Local::now();
+    let converted: DateTime<Local> = DateTime::from(utc);
+    println!("utc = {utc}\nlocal = {local}\nconverted = {converted}");
 }
 
 #[allow(unused)]
