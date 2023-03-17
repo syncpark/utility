@@ -7,17 +7,15 @@ const DEFAULT_PATH_ENV: &str = "/usr/local/aice/bin:/usr/sbin:/usr/bin:/sbin:/bi
 
 pub fn status() -> Result<Option<String>> {
     if let Ok(active) = is_active() {
-        if active != "active" {
+        if !active {
             bail!("ufw is not active");
         }
     }
     Ok(run_ufw_output(&["status", "numbered"]))
 }
 
-pub fn is_active() -> Result<String> {
-    systemctl::is_active(UFW_UNIT)
-        .map(|s| s.to_string())
-        .map_err(Into::into)
+pub fn is_active() -> Result<bool> {
+    systemctl::is_active(UFW_UNIT).map_err(Into::into)
 }
 
 pub fn enable() -> Result<bool> {
