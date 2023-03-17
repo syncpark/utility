@@ -1,4 +1,3 @@
-use anyhow::Result;
 use chrono::{DateTime, Local, NaiveDateTime, TimeZone, Utc};
 use regex::Regex;
 use std::convert::TryFrom;
@@ -27,7 +26,7 @@ fn parse_rfc3339_weak(s: &str) -> DateTime<Utc> {
 }
 
 #[allow(unused)]
-fn test_code() -> Result<()> {
+fn test_code() {
     let value = "1614501549.708923";
     println!("input={value}");
     if value.find('.').is_some() {
@@ -39,7 +38,6 @@ fn test_code() -> Result<()> {
         let ts = Utc.timestamp_opt(secs, 0).unwrap();
         println!("no-dot = {ts:?}");
     }
-    Ok(())
 }
 
 #[allow(unused)]
