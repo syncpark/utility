@@ -1,3 +1,4 @@
+use anyhow::Result;
 use chrono::{DateTime, Local, NaiveDateTime, TimeZone, Utc};
 use regex::Regex;
 use std::convert::TryFrom;
@@ -26,7 +27,7 @@ fn parse_rfc3339_weak(s: &str) -> DateTime<Utc> {
 }
 
 #[allow(unused)]
-fn test_code() {
+fn test_code() -> Result<()> {
     let value = "1614501549.708923";
     println!("input={value}");
     if value.find('.').is_some() {
@@ -35,9 +36,10 @@ fn test_code() {
             println!("dot = {ts:?}");
         }
     } else if let Ok(secs) = value.parse::<i64>() {
-        let ts: DateTime<Utc> = Utc.timestamp(secs, 0);
+        let ts = Utc.timestamp_opt(secs, 0).unwrap();
         println!("no-dot = {ts:?}");
     }
+    Ok(())
 }
 
 #[allow(unused)]
@@ -76,11 +78,13 @@ fn from_utc() {
 #[allow(unused)]
 fn from_i64() {
     let i = 1_637_220_759_i64;
-    let naive = NaiveDateTime::from_timestamp(i, 0);
-
-    // Create a normal DateTime from the NaiveDateTime
-    let datetime: DateTime<Utc> = DateTime::from_utc(naive, Utc);
-    println!("i = {i}, datetime = {datetime:?}");
+    if let Some(naive) = NaiveDateTime::from_timestamp_opt(i, 0) {
+        // Create a normal DateTime from the NaiveDateTime
+        let datetime: DateTime<Utc> = DateTime::from_utc(naive, Utc);
+        println!("i = {i}, datetime = {datetime:?}");
+    } else {
+        eprintln!("failed to convert to timestamp for {i}");
+    }
 }
 
 #[allow(unused)]
@@ -95,8 +99,8 @@ fn from_i64_with_nanos(v: &str) {
     let nanos = s
         .get(1)
         .map_or(0, |ss| ss.parse::<u32>().unwrap_or_default() * 1000);
-    let dt_no_nano = Utc.timestamp(secs, 0);
-    let dt_with_nano = Utc.timestamp(secs, nanos);
+    let dt_no_nano = Utc.timestamp_opt(secs, 0).unwrap();
+    let dt_with_nano = Utc.timestamp_opt(secs, nanos).unwrap();
     println!("dt_no_nano = {dt_no_nano:?}, dt_with_nano = {dt_with_nano:?}");
 
     if let Ok(naive) = NaiveDateTime::parse_from_str(v, "%s%.6f") {
