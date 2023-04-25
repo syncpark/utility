@@ -1,5 +1,5 @@
 [package]
-name = "files"
+name = "test-files"
 version = "0.2.0-alpha.0"
 authors = ["root"]
 edition = "2018"

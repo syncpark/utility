@@ -4,11 +4,8 @@ use std::convert::TryFrom;
 use std::str;
 
 fn main() {
-    from_utc_to_local2();
-    // let input = 1_562_050_801_302_957_000_u64;
-    // let start = from_u64(input);
-    // println!("{input} => {start}");
-    // println!("{}", parse_rfc3339_weak(&start).format("%FT%T%.9fZ"));
+    let value = "601234544.8546";
+    test_code(value);
 }
 
 const A_BILLION: i64 = 1_000_000_000;
@@ -25,9 +22,10 @@ fn parse_rfc3339_weak(s: &str) -> DateTime<Utc> {
     chrono::DateTime::from(humantime::parse_rfc3339_weak(s).unwrap())
 }
 
+// let value = "1614501549.708923";
+// test_code(value);
 #[allow(unused)]
-fn test_code() {
-    let value = "1614501549.708923";
+fn test_code(value: &str) {
     println!("input={value}");
     if value.find('.').is_some() {
         if let Ok(naive) = NaiveDateTime::parse_from_str(value, "%s%.6f") {
