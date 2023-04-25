@@ -1,11 +1,10 @@
 [package]
-name = "run-command-ubuntu"
-version = "0.1.0"
+name = "test-semver"
+version = "0.5.0-alpha.3"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 anyhow = "1.0"
-systemctl = "0.1"
-roxy = { git = "https://github.com/aicers/roxy.git", tag = "0.1.0" }
+semver = "1.0"
