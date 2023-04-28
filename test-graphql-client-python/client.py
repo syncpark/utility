@@ -63,6 +63,7 @@ def process_log(target, token, source, start, end):
     client = GraphqlClient(
         endpoint=target, headers=header, verify=False)
 
+    count = 0
     while start:
         http_query = """
             query http($source: String, $start: String, $end: String) {
@@ -78,10 +79,12 @@ def process_log(target, token, source, start, end):
             }
             }
         """
-        http_variables = {"source": source}
-
+        http_variables = {"source": source, "start": start, "end": end}
         data = client.execute(query=http_query, variables=http_variables)
         edges = data['data']['httpRawEvents']['edges']
+        if count > 0:
+            edges = edges[1:]
+        count += len(edges)
         start = parse_and_save_log(edges, "test.log")
 
 
@@ -91,4 +94,4 @@ token = login("https://172.30.1.216:8443/graphql", "admin", "admin")
 sources = get_sources("https://172.30.1.216:8443/archive", token)
 for source in sources:
     process_log("https://172.30.1.216:8443/archive", token,
-                source, "2023-04-26T15:00:00.000000000+00:00", "2023-04-26T19:00:00.000000000+00:00")
+                source, "2023-04-26T15:00:00.000000000+00:00", "2023-04-26T16:00:00.000000000+00:00")
