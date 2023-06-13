@@ -4,14 +4,15 @@ use std::convert::TryFrom;
 use std::str;
 
 fn main() {
-    let value = "601234544.8546";
-    test_code(value);
+    let input = 1614108757641411000;
+    let r = from_u64(input);
+    println!("{r}")
 }
 
 const A_BILLION: i64 = 1_000_000_000;
 #[allow(unused)]
-fn from_u64(input: u64) -> String {
-    let input = i64::try_from(input).unwrap_or_default();
+fn from_u64(input: i64) -> String {
+    // let input = i64::try_from(input).unwrap_or_default();
     let nsecs = u32::try_from(input % A_BILLION).unwrap_or_default();
     NaiveDateTime::from_timestamp_opt(input / A_BILLION, nsecs)
         .map_or("-".to_string(), |s| s.format("%FT%T%.9fZ").to_string())
@@ -52,11 +53,11 @@ fn from_utc_to_local(v: &str) {
 }
 
 #[allow(unused)]
-fn from_utc_to_local2() {
-    let utc = Utc::now();
-    let local = Local::now();
-    let converted: DateTime<Local> = DateTime::from(utc);
-    println!("utc = {utc}\nlocal = {local}\nconverted = {converted}");
+fn from_utc_to_local2(utc: DateTime<Utc>) {
+    // let utc = Utc::now();
+    // let local = Local::now();
+    let local: DateTime<Local> = DateTime::from(utc);
+    println!("utc = {utc}\nlocal = {local}");
 }
 
 #[allow(unused)]
@@ -72,8 +73,8 @@ fn from_utc() {
 }
 
 #[allow(unused)]
-fn from_i64() {
-    let i = 1_637_220_759_i64;
+fn from_i64(i: i64) {
+    // let i = 1_637_220_759_i64;
     if let Some(naive) = NaiveDateTime::from_timestamp_opt(i, 0) {
         // Create a normal DateTime from the NaiveDateTime
         let datetime: DateTime<Utc> = DateTime::from_utc(naive, Utc);
