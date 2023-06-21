@@ -1,3 +1,6 @@
+mod netgroup;
+
+use crate::netgroup::NetGroup;
 use ipnet::{IpAddrRange, IpBitAnd, IpSub, Ipv4AddrRange, Ipv4Net, Ipv6Net};
 use std::{
     collections::HashMap,
@@ -10,10 +13,12 @@ fn main() {
     rangeinclusive_ipaddr();
     let tree = build_search_tree();
     println!("{tree:#?}");
+    tree.estimate();
 
-    let ip_list: Vec<Ipv4Addr> = vec![
+    let ip_list: Vec<IpAddr> = vec![
         "172.30.1.208".parse().unwrap(),
         "204.87.199.20".parse().unwrap(),
+        "204.87.176.10".parse().unwrap(),
     ];
     for ip in ip_list {
         let r = tree.search(ip);
@@ -60,21 +65,41 @@ fn rangeinclusive_ipaddr() {
 
 #[derive(Debug)]
 struct SearchTree {
-    netmask: Ipv4Addr,
-    tree: HashMap<Ipv4Addr, Vec<Ipv4Net>>,
+    netmask: IpAddr,
+    tree: HashMap<IpAddr, Vec<NetGroup>>,
 }
 
 impl SearchTree {
-    fn search(&self, ip: Ipv4Addr) -> bool {
-        let key = ip.bitand(self.netmask);
+    fn search(&self, ip: IpAddr) -> bool {
+        let key = match (ip, self.netmask) {
+            (IpAddr::V4(x), IpAddr::V4(y)) => IpAddr::V4(x.bitand(y)),
+            (IpAddr::V6(x), IpAddr::V6(y)) => IpAddr::V6(x.bitand(y)),
+            _ => return false,
+        };
+
         if let Some(v) = self.tree.get(&key) {
             for net in v {
-                if net.contains(&ip) {
+                if net.contains(ip) {
                     return true;
                 }
             }
         }
         false
+    }
+
+    fn estimate(&self) {
+        let sum = self.tree.iter().fold(0, |sum, (_, v)| sum + v.len());
+        println!("total keys = {}", self.tree.len());
+        println!("total elements = {sum}");
+        println!("average elements = {}", sum / self.tree.len());
+        let max = self
+            .tree
+            .iter()
+            .max_by(|(_, a), (_, b)| a.len().cmp(&b.len()))
+            .map(|(_, v)| v.len());
+        if let Some(max) = max {
+            println!("max elements = {max}");
+        }
     }
 }
 
@@ -82,10 +107,14 @@ fn build_search_tree() -> SearchTree {
     let nets = vec![
         "204.14.80.0/22",
         "204.19.38.0/23",
+        "204.21.72.173",
+        "204.21.72.177",
+        "204.21.72.185",
         "204.27.155.0/24",
         "204.44.32.0/20",
         "204.44.208.0/20",
         "204.44.224.0/20",
+        "204.50.71.220..=204.50.71.255",
         "204.52.96.0/19",
         "204.52.184.0/24",
         "204.52.255.0/24",
@@ -102,6 +131,7 @@ fn build_search_tree() -> SearchTree {
         "204.86.16.0/20",
         "204.87.136.0/24",
         "204.87.175.0/24",
+        "204.87.176.1..=204.87.176.21",
         "204.87.199.0/24",
         "204.87.233.0/24",
         "204.88.160.0/20",
@@ -114,23 +144,27 @@ fn build_search_tree() -> SearchTree {
     ];
     let nets = nets
         .iter()
-        .map(|n| Ipv4Net::from_str(n).unwrap())
+        .filter_map(|n| NetGroup::from_str(n).ok())
         .collect::<Vec<_>>();
     let netmask = nets
         .iter()
         .min_by(|a, b| a.prefix_len().cmp(&b.prefix_len()))
-        .map(Ipv4Net::netmask)
+        .map(NetGroup::netmask)
         .unwrap();
-    println!("netmask = {:b}", u32::from(netmask));
-    let mut tree: HashMap<Ipv4Addr, Vec<Ipv4Net>> = HashMap::new();
+    match netmask {
+        IpAddr::V4(x) => println!("netmask = {:b}", u32::from(x)),
+        IpAddr::V6(x) => println!("netmask = {:b}", u128::from(x)),
+    }
+
+    let mut tree: HashMap<IpAddr, Vec<NetGroup>> = HashMap::new();
     for x in nets {
-        let ip = x.addr().bitand(netmask);
-        tree.entry(ip)
-            .and_modify(|e| e.push(x))
-            .or_insert_with(|| vec![x]);
-        println!("{x} => {ip}");
+        if let Some(ip) = x.bitand(netmask) {
+            tree.entry(ip)
+                .and_modify(|e| e.push(x.clone()))
+                .or_insert_with(|| vec![x.clone()]);
+            println!("{x} => {ip}");
+        }
     }
 
     SearchTree { netmask, tree }
 }
-
