@@ -8,3 +8,10 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0"
 ipnet = "2.7"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+
+[features]
+default = ["restructuring", "estimation"]
+restructuring = []
+estimation = []
