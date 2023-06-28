@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use anyhow::{anyhow, bail, Result};
 use ipnet::{IpBitAnd, IpNet, Ipv4Net, Ipv6Net};
 use std::{
     cmp::Ordering,
@@ -67,29 +67,26 @@ fn rangeinclusive_to_ipnet(v: &RangeInclusive<IpAddr>) -> Result<IpNet> {
 }
 
 impl NetGroup {
-    pub fn prefix_len(&self) -> u8 {
+    fn network(&self) -> &IpNet {
         match self {
-            NetGroup::IpNet(x) | NetGroup::IpRange((x, _)) => x.prefix_len(),
+            NetGroup::IpNet(x) | NetGroup::IpRange((x, _)) => x,
         }
+    }
+
+    pub fn prefix_len(&self) -> u8 {
+        self.network().prefix_len()
     }
 
     pub fn netmask(&self) -> IpAddr {
-        match self {
-            NetGroup::IpNet(x) | NetGroup::IpRange((x, _)) => x.netmask(),
-        }
+        self.network().netmask()
     }
 
     pub fn contains(&self, ip: IpAddr) -> bool {
-        match self {
-            NetGroup::IpNet(x) | NetGroup::IpRange((x, _)) => x.contains(&ip),
-        }
+        self.network().contains(&ip)
     }
 
     pub fn bitand(&self, netmask: IpAddr) -> Option<IpAddr> {
-        let net = match self {
-            NetGroup::IpNet(x) | NetGroup::IpRange((x, _)) => x,
-        };
-        match (net, netmask) {
+        match (self.network(), netmask) {
             (IpNet::V4(x), IpAddr::V4(y)) => Some(IpAddr::V4(x.addr().bitand(y))),
             (IpNet::V6(x), IpAddr::V6(y)) => Some(IpAddr::V6(x.addr().bitand(y))),
             _ => None,
@@ -97,6 +94,23 @@ impl NetGroup {
     }
 }
 
+fn rangeinclusive_ipaddr_from_str(range: &str) -> Result<RangeInclusive<IpAddr>> {
+    let s = range.split("..=").collect::<Vec<_>>();
+    if s.len() == 2 {
+        if let Some(first) = s.first() {
+            if let Ok(first) = IpAddr::from_str(first) {
+                if let Some(last) = s.last() {
+                    if let Ok(last) = IpAddr::from_str(last) {
+                        return Ok(RangeInclusive::new(first, last));
+                    }
+                }
+            }
+        }
+    }
+    Err(anyhow!("invalid RangeInclusive<IpAddr> value {}", range))
+}
+
+// convert IpAddr, IpNet, RangeInclusive<IpAddr> string to NetGroup
 impl FromStr for NetGroup {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -105,19 +119,9 @@ impl FromStr for NetGroup {
                 return Ok(NetGroup::IpNet(ipnet));
             }
         } else if s.contains("..=") {
-            let s = s.split("..=").collect::<Vec<_>>();
-            if s.len() == 2 {
-                if let Some(first) = s.first() {
-                    if let Ok(first) = IpAddr::from_str(first) {
-                        if let Some(last) = s.last() {
-                            if let Ok(last) = IpAddr::from_str(last) {
-                                let range = first..=last;
-                                if let Ok(net_for_range) = rangeinclusive_to_ipnet(&range) {
-                                    return Ok(NetGroup::IpRange((net_for_range, range)));
-                                }
-                            }
-                        }
-                    }
+            if let Ok(range) = rangeinclusive_ipaddr_from_str(s) {
+                if let Ok(net_for_range) = rangeinclusive_to_ipnet(&range) {
+                    return Ok(NetGroup::IpRange((net_for_range, range)));
                 }
             }
         } else if s.contains('.') {
