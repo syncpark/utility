@@ -82,7 +82,10 @@ impl NetGroup {
     }
 
     pub fn contains(&self, ip: IpAddr) -> bool {
-        self.network().contains(&ip)
+        match self {
+            NetGroup::IpNet(x) => x.contains(&ip),
+            NetGroup::IpRange((_, x)) => x.contains(&ip),
+        }
     }
 
     pub fn bitand(&self, netmask: IpAddr) -> Option<IpAddr> {
@@ -137,6 +140,6 @@ impl FromStr for NetGroup {
                 }
             }
         }
-        Err("invalid network group".to_string())
+        Err(format!("invalid network group {s}"))
     }
 }
