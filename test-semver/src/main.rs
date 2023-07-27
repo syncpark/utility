@@ -3,45 +3,43 @@ use semver::{Version, VersionReq};
 use std::{
     fs::File,
     io::{Read, Write},
-    path::{Path, PathBuf},
+    path::Path,
 };
 
 fn main() {
     // create VERSION file in current directory
-    if let Err(e) = create_version_file(&Path::new("./VERSION"), "0.5.0-alpha.3") {
+    let version_path = Path::new("./VERSION");
+    if let Err(e) = create_version_file(version_path, "0.12.2") {
         eprintln!("Error: {e:?}");
     }
 
-    let (_, version) = retrieve_or_create_version(".").expect("VERSION required");
-    let req = VersionReq::parse(">=0.3,<0.5.0").expect("valid version requirement");
-    // check if version is inlcuded in req
-    if req.matches(&version) {
-        println!("{req} matches {version}");
-    } else {
-        println!("{req} does not matches {version}");
-    }
-
+    let version = read_version_file(version_path).expect("failed to read VERSION");
+    println!("Database version is {version}");
     let compatible =
-        VersionReq::parse(">=0.5.0-alpha.4,<0.6.0-alpha").expect("valid version requirement");
+        VersionReq::parse(">0.12.4-alpha,<0.13.0-alpha").expect("valid version requirement");
+    println!("Compatible version is {compatible}");
+
+    // check if version is inlcuded in req
+    println!("\nChecking ... ");
     if compatible.matches(&version) {
-        println!("Ok: compatible {compatible} matchtes to {version}");
+        println!("\t{compatible} matches {version}");
+        println!("\tMigration does not required");
+        std::process::exit(0);
     } else {
-        eprintln!("incompatible version {version}, require {compatible}");
+        println!("\t{compatible} does not matches {version}");
+        println!("\tMigration is required");
     }
 
-    if req.matches(&version) {
-        if compatible.matches(&version) {
-            println!("Migration can go");
-        }
+    println!("\nFinding migration requirement ... ");
+    let requirement =
+        VersionReq::parse(">=0.12.0,<0.12.4-alpha").expect("valid version requirement");
+    if requirement.matches(&version) {
+        println!("\tOk: requirement {requirement} matchtes to {version}");
+        println!("\tMigration can go");
+    } else {
+        eprintln!("Requirement not found.");
+        eprintln!("No migrations.");
     }
-}
-
-fn retrieve_or_create_version<P: AsRef<Path>>(path: P) -> Result<(PathBuf, Version)> {
-    let path = path.as_ref();
-    let file = path.join("VERSION");
-
-    let version = read_version_file(&file)?;
-    Ok((file, version))
 }
 
 fn read_version_file(path: &Path) -> Result<Version> {
